@@ -1,116 +1,39 @@
 import sys
 import os
 import re
-# from streamlit_mermaid import st_mermaid
 from pathlib import Path
 
 ROOT_DIR = Path(__file__).resolve().parent.parent
 sys.path.append(str(ROOT_DIR))
 
 import streamlit as st
-import streamlit.components.v1 as components
+from graphviz import Digraph
 
 from orchestrator.workflow import WorkflowOrchestrator
 
 
-def extract_mermaid(markdown_text):
-
-    pattern = r"```mermaid\s*(.*?)```"
-
-    matches = re.findall(
-        pattern,
-        markdown_text,
-        re.DOTALL
-    )
-
-    cleaned_matches = []
-
-    for match in matches:
-
-        cleaned = (
-            match
-            .replace("\r", "")
-            .strip()
-        )
-
-        cleaned_matches.append(cleaned)
-
-    return cleaned_matches
-
-
-# def render_mermaid(mermaid_code):
-#
-#     html = f"""
-#     <!DOCTYPE html>
-#     <html>
-#
-#     <head>
-#
-#       <script type="module">
-#         import mermaid from
-#         'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-#
-#         window.addEventListener('load', async () => {{
-#
-#             mermaid.initialize({{
-#                 startOnLoad: false
-#             }});
-#
-#             const element =
-#                 document.getElementById("mermaid-diagram");
-#
-#             try {{
-#
-#                 const {{ svg }} =
-#                     await mermaid.render(
-#                         "graphDiv",
-#                         `{mermaid_code}`
-#                     );
-#
-#                 element.innerHTML = svg;
-#
-#             }} catch (err) {{
-#
-#                 element.innerHTML =
-#                     "<pre>" + err + "</pre>";
-#
-#                 console.error(err);
-#             }}
-#         }});
-#       </script>
-#
-#     </head>
-#
-#     <body>
-#
-#         <div id="mermaid-diagram"></div>
-#
-#     </body>
-#
-#     </html>
-#     """
-#
-#     components.html(
-#         html,
-#         height=600,
-#         scrolling=True
-#     )
-from graphviz import Digraph
-
+# =========================================================
+# Build UML Style Sequence Diagram
+# =========================================================
 
 def build_sequence_diagram(text):
 
-    dot = Digraph()
+    dot = Digraph("SequenceDiagram")
 
-    dot.attr(rankdir="LR")
+    dot.attr(
+        rankdir="LR",
+        splines="polyline",
+        nodesep="1.0",
+        ranksep="1.5",
+        bgcolor="white"
+    )
 
-    participants = set()
-
-    lines = text.splitlines()
-
+    participants = []
     interactions = []
 
     pattern = r"(\w+)\s*->\s*(\w+)\s*:\s*(\w+)"
+
+    lines = text.splitlines()
 
     for line in lines:
 
@@ -125,34 +48,53 @@ def build_sequence_diagram(text):
         target = match.group(2)
         command = match.group(3)
 
-        participants.add(source)
-        participants.add(target)
+        if source not in participants:
+            participants.append(source)
+
+        if target not in participants:
+            participants.append(target)
 
         interactions.append(
             (source, target, command)
         )
 
-    # Create Nodes
+    # =====================================================
+    # Create Participant Nodes
+    # =====================================================
+
     for participant in participants:
 
         dot.node(
             participant,
-            shape="box",
-            style="filled",
-            fillcolor="lightblue"
+            shape="rectangle",
+            style="filled,bold",
+            fillcolor="lightblue",
+            fontsize="14",
+            fontname="Helvetica",
+            margin="0.3"
         )
 
-    # Create Edges
-    for source, target, command in interactions:
+    # =====================================================
+    # Create Sequence Edges
+    # =====================================================
+
+    for idx, (source, target, command) in enumerate(interactions):
 
         dot.edge(
             source,
             target,
-            label=command
+            label=f"{idx + 1}: {command}",
+            fontsize="12",
+            fontname="Helvetica",
+            arrowsize="0.8"
         )
 
     return dot
 
+
+# =========================================================
+# Streamlit Page Config
+# =========================================================
 
 st.set_page_config(
     page_title="AI TANGO Engineering System",
@@ -165,20 +107,29 @@ st.markdown(
     "AI-assisted TANGO feature development using multi-agent workflow."
 )
 
+# =========================================================
+# User Requirement Input
+# =========================================================
+
 user_requirement = st.text_area(
     "Enter Feature Requirement",
-    height=200,
+    height=250,
     placeholder="""
 Example:
 
 Implement TelescopeON command orchestration.
 
 Requirements:
-- MonitoringDevice invokes TelescopeON on Device2 and Device3
+- TelescopeON invoked on CentralNode
+- CentralNode invokes TelescopeON on CSPMaster and SDPMaster
 - Wait for ResultCode.OK from all devices
 - Return FAILED if any device fails
 """
 )
+
+# =========================================================
+# Generate Workflow
+# =========================================================
 
 if st.button("Generate"):
 
@@ -188,10 +139,14 @@ if st.button("Generate"):
 
         result = orchestrator.run(user_requirement)
 
+    # =====================================================
+    # Tabs
+    # =====================================================
+
     tab1, tab2, tab3, tab4 = st.tabs([
         "Requirements",
         "Architecture",
-        "Mermaid Diagram",
+        "Sequence Diagram",
         "Generated Devices"
     ])
 
@@ -201,6 +156,8 @@ if st.button("Generate"):
 
     with tab1:
 
+        st.subheader("Structured Requirements")
+
         st.json(result["requirement_output"])
 
     # =====================================================
@@ -209,48 +166,38 @@ if st.button("Generate"):
 
     with tab2:
 
+        st.subheader("AI Generated Architecture")
+
         st.markdown(result["architecture_output"])
 
     # =====================================================
-    # Mermaid Diagram Tab
+    # Sequence Diagram Tab
     # =====================================================
 
-    # with tab3:
-    #
-    #     mermaid_blocks = extract_mermaid(
-    #         result["architecture_output"]
-    #     )
-    #
-    #     if not mermaid_blocks:
-    #
-    #         st.error("No Mermaid diagram found")
-    #
-    #     else:
-    #
-    #         for block in mermaid_blocks:
-    #
-    #             cleaned = block.strip()
-    #
-    #             st.code(cleaned, language="text")
-    #
-    #             render_mermaid(cleaned)
     with tab3:
 
         st.subheader(
-            "AI Generated Sequence Diagram"
+            "AI Generated Flow Diagram"
         )
 
         diagram = build_sequence_diagram(
             result["architecture_output"]
         )
 
-        st.graphviz_chart(diagram)
+        st.graphviz_chart(
+            diagram,
+            use_container_width=True
+        )
 
     # =====================================================
     # Generated Devices Tab
     # =====================================================
 
     with tab4:
+
+        st.subheader(
+            "Generated TANGO Device Code"
+        )
 
         st.markdown(result["device_output"])
 

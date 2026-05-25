@@ -1,0 +1,42 @@
+Feature Name:
+TelescopeON Command Orchestration
+
+Objective:
+Implement distributed TelescopeON command orchestration using TANGO Controls.
+
+System Components:
+- CentralNode
+- CSPMaster
+- SDPMaster
+
+Functional Requirements:
+- TelescopeON command is invoked on CentralNode
+- CentralNode invokes TelescopeON on CSPMaster and SDPMaster using TANGO DeviceProxy
+- CentralNode waits for command completion from all downstream devices
+- Each device exposes a CommandStatus attribute for tracking command execution state
+- TelescopeON completes successfully only if all devices return ResultCode.OK
+- TelescopeON returns FAILED if:
+  - any downstream device returns failure
+  - timeout occurs
+  - exception occurs during command execution
+
+Execution Behaviour:
+- TelescopeON should return immediate QUEUED response
+- Command execution continues asynchronously in background thread/task
+- CentralNode continuously monitors downstream CommandStatus attributes
+- Aggregate final result based on all device responses
+
+Non-Functional Requirements:
+- Add structured logging for command execution flow
+- Add exception handling for communication failures
+- Add timeout handling for unresponsive devices
+- Follow production-style TANGO Python implementation practices
+- Use clear separation of orchestration logic and device command handling
+
+Expected Output:
+- TANGO device hierarchy
+- Command interaction flow
+- Sequence orchestration design
+- Production-style Python TANGO device implementation
+- Error handling strategy
+- Timeout and retry strategy

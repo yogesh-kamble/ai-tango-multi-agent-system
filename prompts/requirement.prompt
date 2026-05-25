@@ -1,10 +1,12 @@
 Implement TelescopeON command orchestration using TANGO Controls.
 
 Requirements:
-- TelescopeON is invoked on MonitoringDevice
-- MonitoringDevice invokes TelescopeON on Device2 and Device3 using DeviceProxy
-- Wait for ResultCode from all devices
+- TelescopeON is invoked on CentralNode
+- CentralNode invokes TelescopeON on CSPMaster and SDPMaster using DeviceProxy
+- Create seperate attribute CommandStatus to track command execution status
+- Wait for CommandStatus OK from all devices
 - Return OK only if all devices return ResultCode.OK
 - Return FAILED if any device fails or times out
 - Add logging, exception handling, and timeout handling
+- Return immediate response as a QUEUED of CommandStatus
 - Generate production-style TANGO Python implementation
