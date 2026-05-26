@@ -16,71 +16,96 @@ class TangoDeviceAgent:
         requirement_output: dict,
         workflow_output: str
     ):
-
         prompt = f"""
-You are a senior TANGO Controls engineer.
+        You are a senior TANGO Controls engineer.
 
-Your task is to generate production-quality TANGO device orchestration code.
+        Your task is to generate production-quality executable TANGO device orchestration code.
 
-SYSTEM CONTEXT:
-- This is a distributed telescope control system
-- Devices communicate using TANGO DeviceProxy
-- Commands may involve orchestration across multiple devices
-- Reliability and fault handling are important
+        SYSTEM CONTEXT:
+        - This is a distributed telescope control system
+        - Devices communicate using TANGO DeviceProxy
+        - Commands may involve orchestration across multiple devices
+        - Reliability, observability, and fault handling are important
+        - Generated code must run directly in standard PyTango environments
 
-REQUIREMENTS:
-{requirement_output}
+        REQUIREMENTS:
+        {requirement_output}
 
-WORKFLOW DESIGN:
-{workflow_output}
+        WORKFLOW DESIGN:
+        {workflow_output}
 
-IMPLEMENTATION REQUIREMENTS:
+        IMPLEMENTATION REQUIREMENTS:
 
-1. Generate Python TANGO device classes
-2. Use PyTango style APIs
-3. Include:
-   - commands
-   - attributes
-   - ResultCode handling
-   - timeout handling
-   - logging
-   - exception handling
-   - state transitions
-4. Generate realistic orchestration logic
-5. Add comments explaining important sections
-6. Use DeviceProxy where required
-7. Assume asynchronous orchestration where appropriate
+        1. Generate Python TANGO device classes
+        2. Use standard stable PyTango APIs
+        3. Include:
+           - commands
+           - attributes
+           - ResultCode handling
+           - timeout handling
+           - logging
+           - exception handling
+           - state transitions
+        4. Generate realistic orchestration logic
+        5. Add comments explaining important sections
+        6. Use DeviceProxy where required
+        7. Assume asynchronous orchestration where appropriate
+        8. Generate executable code compatible with standard PyTango runtime
+        9. Prefer compatibility and runtime stability over framework verbosity
 
-IMPORTANT:
-- Generate production-style engineering code
-- Do not generate toy examples
-- Focus on orchestration and distributed command handling
-- Consider partial failure handling
-- Consider device communication failure
+        IMPORTANT IMPLEMENTATION RULES:
+        - Implement orchestration exactly as defined in workflow design
+        - Generate only the devices required by architecture
+        - Use DeviceProxy for downstream device communication
+        - Implement realistic distributed command execution
+        - Handle downstream failures gracefully
+        - Implement aggregated ResultCode handling where orchestration exists
+        - Generate production-style engineering code
+        - Do not generate toy examples
+        - Do not hardcode telescope commands unless present in requirements
+        - Generate code that runs directly without manual fixes
+        - Avoid unsupported or version-specific Tango APIs
+        - Prefer minimal stable APIs over verbose attribute configuration
+        - Avoid unnecessary Tango metadata configuration
+        - Ensure all imports are valid
+        - Ensure device server startup works correctly
+        - Ensure commands execute without syntax/runtime errors
 
-RETURN FORMAT:
+        IMPORTANT PYTANGO COMPATIBILITY RULES:
+        - Use:
+            attribute(dtype=str, access=AttrWriteType.READ)
+          instead of verbose optional attribute metadata
+        - Avoid:
+            label=
+            description=
+            display_level=
+            data_format=
+            data_type=
+          unless explicitly required
+        - Use:
+            run((DeviceClass,))
+          instead of:
+            run((DeviceClass,), "DeviceClass")
+        - Prefer simple stable attribute definitions
+        - Generate runtime-compatible code for common PyTango installations
 
-FILE: devices/monitoring_device.py
+        CODE QUALITY RULES:
+        - Use proper threading where async orchestration is needed
+        - Use locks for shared state updates
+        - Use structured logging
+        - Add clear comments for orchestration logic
+        - Handle exceptions explicitly
+        - Handle timeout scenarios cleanly
+        - Avoid pseudo-code
+        - Avoid incomplete implementations
+        - Return realistic ResultCode values
 
-<python code>
+        RETURN FORMAT:
 
-FILE: devices/device2.py
+        FILE: devices/<device_name>.py
 
-<python code>
-
-FILE: devices/device3.py
-
-<python code>
-
-FEATURE TO IMPLEMENT:
-The MonitoringDevice receives TelescopeON command.
-It invokes TelescopeON on Device2 and Device3.
-It waits for ResultCode.OK from all devices.
-If all devices succeed:
-    return ResultCode.OK
-Else:
-    return ResultCode.FAILED
-"""
+        <python code>
+        """
 
         response = client.chat.completions.create(
             model="gpt-4.1-mini",
