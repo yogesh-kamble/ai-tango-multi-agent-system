@@ -1,0 +1,19 @@
+Implement TelescopeOFF command orchestration using TANGO Controls.
+
+Requirements:
+- TelescopeOFF is invoked on CentralNode.
+- CentralNode invokes TelescopeOFF on CSPMaster and SDPMaster using DeviceProxy.
+- Return immediate response as ResultCode.QUEUED.
+- Execute orchestration asynchronously in a background thread.
+- Wait for completion of all downstream TelescopeOFF commands.
+- Return ResultCode.OK only if all downstream devices return ResultCode.OK.
+- Return ResultCode.FAILED if any downstream device returns ResultCode.FAILED.
+- Handle communication failures, exceptions, and command timeouts.
+- Maintain CommandStatus attribute to track command execution state.
+- Update CommandStatus through states:
+  - QUEUED
+  - RUNNING
+  - OK
+  - FAILED
+- Log all command invocations, responses, failures, and timeout events.
+- Generate production-style TANGO Python implementation.
