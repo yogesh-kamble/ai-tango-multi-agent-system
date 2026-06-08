@@ -55,6 +55,7 @@ class TangoDeviceAgent:
         10. Configure Tango change events correctly for event-driven attributes
         11. Ensure all event attributes are properly initialized during device startup
         12. Generate fully operational TANGO event handling code
+        13. configure logging level to info
 
         IMPORTANT IMPLEMENTATION RULES:
         - Implement orchestration exactly as defined in workflow design
@@ -117,6 +118,40 @@ class TangoDeviceAgent:
         - Generate code compatible with PyTango 10.x.
         - Do not invent Tango APIs or methods.
         
+        API VALIDATION RULES:
+
+        - Use only documented PyTango APIs.
+        - Do not invent helper methods.
+        - Do not use:
+            tango.get_clock()
+            tango.Timer()
+            DeviceProxy.get_name()
+            PyTango.command()
+            PyTango.server_run()
+
+        - If a timer is needed, use Python time module.
+        - All imports must be explicitly included.
+        - Generated code must be syntactically executable without modification.
+        
+        ASYNC ORCHESTRATION RULES
+
+        * Any command involving downstream devices must execute asynchronously.
+        * Command handlers must return ResultCode.QUEUED immediately.
+        * Never wait for downstream completion inside a Tango command method.
+        * Use a single background orchestration thread.
+        * The orchestration thread shall:
+        
+          * invoke downstream commands
+          * monitor CommandStatus attributes
+          * handle timeouts and exceptions
+          * aggregate results
+          * update local CommandStatus
+        * CommandStatus lifecycle:
+          QUEUED -> RUNNING -> OK/FAILED
+        * All downstream operations must have explicit timeout handling.
+        * Clients should monitor CommandStatus instead of waiting for command completion.
+
+        
         TANGO THREADING RULES:
         - Background threads interacting with Tango APIs must use:
             with tango.EnsureOmniThread():
@@ -131,6 +166,14 @@ class TangoDeviceAgent:
         - Protect shared state with threading.Lock
         - Avoid Tango monitor deadlocks
         - Event pushing from worker threads must use EnsureOmniThread
+        
+        THREADING RULES:
+        - Use instance-level locks only.
+        - Never declare threading.Lock() as a class variable.
+        - Never acquire a lock and call another method that acquires the same lock.
+        - Use threading.RLock only when recursive locking is required.
+        - Keep worker threads independent from Tango APIs.
+        - Worker threads should only update internal Python state.
     
         IMPORT AND FRAMEWORK RULES:
         - Use modern tango package APIs
@@ -189,7 +232,7 @@ class TangoDeviceAgent:
         """
 
         response = client.chat.completions.create(
-            model="gpt-4.1-mini",
+            model="gpt-4.1",
             messages=[
                 {
                     "role": "system",

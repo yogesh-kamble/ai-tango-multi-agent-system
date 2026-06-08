@@ -101,7 +101,7 @@ st.set_page_config(
     layout="wide"
 )
 
-st.title("AI Multi-Agent TANGO Engineering System")
+st.title("AI-Assisted Feature Development for TANGO Controls")
 
 st.markdown(
     "AI-assisted TANGO feature development using multi-agent workflow."
@@ -146,7 +146,7 @@ if st.button("Generate"):
     tab1, tab2, tab3, tab4 = st.tabs([
         "Requirements",
         "Architecture",
-        "Sequence Diagram",
+        "Flow Diagram",
         "Generated Devices"
     ])
 
